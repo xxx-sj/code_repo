@@ -2,25 +2,35 @@ package main;
 
 import java.io.*;
 import java.net.*;
-import java.nio.channels.SocketChannel;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
-//        Main.responseServer();
-        Main.requestToServer();
+        Main.responseServer();
+//        Main.requestToServer();
     }
 
     public static void responseServer() throws IOException {
-        System.out.println("socket server has started 127.0.0.1:8080 listened");
-        ServerSocket serverSocket = new ServerSocket(8080);
+        ServerSocket serverSocket = new ServerSocket(8080,6);
+        Socket socket = serverSocket.accept();
         while (true) {
-            Socket socket = serverSocket.accept();
 
             InputStream inputStream = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
-            System.out.println("reader.readLine() = " + reader.readLine());
+            String line = reader.readLine();
+//            System.out.println("@222 == " + (line = reader.readLine()));
+//            while((line = reader.readLine()) != null) {
+//                System.out.println(line);
+//            }
+
+            while(!line.isEmpty()) {
+                System.out.println(line);
+                line = reader.readLine();
+            }
+
+            reader.close();
+            socket.close();
         }
     }
 
