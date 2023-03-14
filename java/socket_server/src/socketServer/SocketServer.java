@@ -16,7 +16,7 @@ public class SocketServer {
     private static Object lock = new Object();
     public static void main(String[] args) {
 
-        ExecutorService executor = Executors.newFixedThreadPool(8, new WorkerThreadFactory());
+        ExecutorService executor = Executors.newFixedThreadPool(10, new WorkerThreadFactory());
 
         ServerSocket server = null;
         int port = 8088;
@@ -26,33 +26,15 @@ public class SocketServer {
             server = new ServerSocket(port);
             server.setReuseAddress(true);
 
-            System.out.println("server is listened");
+            System.out.println("server is listened..." + "http://localhost:" + port);
 
             while(true) {
 
                 //연결된 소켓 accpet queue에서 가져옴
+
                 Socket client = server.accept();
-
                 System.out.println("New client connected " + client.getInetAddress().getHostAddress());
-
-                BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-
-//                String line = null;
-//                System.out.println("====while is start====");
-//                while(true) {
-//                    line = in.readLine();
-//                    System.out.println("line = " + line);
-//                    System.out.println("current Thread" + Thread.currentThread());
-//                    if (line.equals("")) {
-//                        break;
-//                    }
-//                }
-//                System.out.println("====while is ended====");
-
-
-
                 executor.execute(new HttpWorker(client));
-//                new HttpWorker(client);
             }
 
         } catch (SocketException e) {
@@ -101,19 +83,25 @@ public class SocketServer {
 ////                    if (req != null && !req.equals("")) {}
 //                }
 
-                String line = null;
-                System.out.println("====while is start====");
+                String line = in.readLine();
+//                System.out.println("====while is start====");
+
+                this.validate(line);
+
                 while(true) {
                     line = in.readLine();
-                    System.out.println("line = " + line);
-                    System.out.println("current Thread" + Thread.currentThread());
+//                    System.out.println("line = " + line);
                     if (line.equals("")) {
                         break;
                     }
                 }
-                System.out.println("====while is ended====");
+//                System.out.println("====while is ended====");
 
-            } catch (IOException e) {
+            } catch (BadRequest e) {
+                //error page 작성
+                e.printStackTrace();
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             } finally {
 
@@ -132,8 +120,32 @@ public class SocketServer {
             }
         }
 
-        private void testMethod(String http) {
-            System.out.println("testMethod called http = " + http);
+        private void validate(String httpRequest) {
+            this.validateHttpRequest(httpRequest);
+            this.validateIsForbidden(httpRequest);
+        }
+
+        private void validateHttpRequest(String httpRequest) {
+            if (this.validateHttpMethod(httpRequest) || httpRequest.length() < 14 ||
+                    !(httpRequest.endsWith("HTTP/1.0") || httpRequest.endsWith("HTTP/1.1"))) {
+                //bac request
+                throw new BadRequest("Bad request: is not http request");
+            }
+        }
+
+        private void validateIsForbidden(String httpRequest) {
+            String req = httpRequest.substring(4, httpRequest.length() - 9).trim();
+            if (req.indexOf("..") > -1 || req.indexOf("/.ht") > -1 || req.endsWith("~")) {
+
+                throw new ForbiddenRequest("is Forbidden request");
+            }
+        }
+
+        private Boolean validateHttpMethod(String request) {
+            return !(request.startsWith("GET") ||
+                    request.startsWith("POST") ||
+                    request.startsWith("PUT"));
+
         }
     }
 
@@ -146,6 +158,18 @@ public class SocketServer {
             System.out.println("new Thread name = " + thread.getName());
 
             return thread;
+        }
+    }
+
+    private static class BadRequest extends RuntimeException {
+        public BadRequest(String message) {
+            super(message);
+        }
+    }
+
+    private static class ForbiddenRequest extends BadRequest {
+        public ForbiddenRequest(String message) {
+            super(message);
         }
     }
 }

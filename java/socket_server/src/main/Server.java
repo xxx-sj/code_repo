@@ -44,16 +44,19 @@ public class Server {
                 String clientRequest = "";
                 //request의 데이터가 없을 때 까지.
                 while ((clientRequest = reader.readLine()) != null) {
+                    // request 첫 라인
                     if (req.equals("")) {
                         req = clientRequest;
                     }
 
                     if(clientRequest.equals("")) {
                         //If the end of the http request , stop
+                        //막줄오면 break;
                         break;
                     }
 
                     if (req != null && !req.equals("")) {
+                        //http request 들어왔다면 worker 생성
                         new HttpWorker(req, socket).start();
                     }
                 }
@@ -86,8 +89,10 @@ public class Server {
                 // Local reader from the client
                 // BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 // Output stream to the client
+                // request에 쓸 printStream
                 PrintStream printer = new PrintStream(socket.getOutputStream());
 
+                //logging 부분
                 LogUtil.write("");
                 LogUtil.write("Http Worker is working...");
                 LogUtil.write(clientRequest);
@@ -100,7 +105,7 @@ public class Server {
                     String errorPage = buildErrorPage("400", "Bad Request", "Your browser sent a request that this server could not understand.");
                     printer.println(errorPage);
                 } else {
-                    //잘못된 request가 아니라면
+                    //http reqeust라면
                     String req = clientRequest.substring(4, clientRequest.length() - 9).trim();
                     if (req.indexOf("..") > -1 || req.indexOf("/.ht") > -1 || req.endsWith("~")) {
                         //request가 ..이 있거나, /.ht가 있거나, ~로 끝난다면, 
