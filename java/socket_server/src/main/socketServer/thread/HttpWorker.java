@@ -10,8 +10,8 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Objects;
+import java.util.prefs.BackingStoreException;
 
 public class HttpWorker implements Runnable {
     private final Socket clientSocket;
@@ -74,7 +74,7 @@ public class HttpWorker implements Runnable {
 //            }
 
         } catch (BadRequest e) {
-            String page = HtmlPageBuilder.buildErrorPage("400", "bad request", "bad request page not exist");
+            String page = HtmlPageBuilder.buildErrorPage("400", "bad request", e.getMessage());
             out.println(page);
         } catch (ForbiddenRequest e) {
             String page = HtmlPageBuilder.buildErrorPage("403", "forbidden request", "wrong request");
@@ -134,7 +134,7 @@ public class HttpWorker implements Runnable {
         File file = new File(filePath.toString());
 
         if (!file.exists() || !file.isFile()) {
-            printer.println("No such resource" + request);
+            throw new BadRequest("no such " + file.getName());
         } else {
             String htmlHeader = buildHttpHeader(filePath.toString(), file.length());
             printer.println(htmlHeader);
