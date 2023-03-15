@@ -57,8 +57,6 @@ public class HttpWorker implements Runnable {
             if (request.indexOf(".") > -1) {
                 // request dot이 있다면 file
                 this.handleFileRequest(request, out);
-
-
             } else {
                 // 일반 html 파일 request
             }
