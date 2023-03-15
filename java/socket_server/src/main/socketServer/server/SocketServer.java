@@ -1,4 +1,4 @@
-package main.socketServer.main;
+package main.socketServer.server;
 
 import main.socketServer.thread.HttpWorker;
 import main.socketServer.thread.factory.WorkerThreadFactory;
@@ -28,7 +28,6 @@ public class SocketServer {
             System.out.println("server is listened..." + "http://localhost:" + port);
 
             while (true) {
-
                 //연결된 소켓 accpet queue에서 가져옴
                 Socket client = server.accept();
                 System.out.println("New client connected " + client.getInetAddress().getHostAddress());

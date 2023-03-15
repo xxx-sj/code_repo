@@ -4,12 +4,13 @@ import main.socketServer.Utils.HtmlPageBuilder;
 import main.socketServer.error.BadRequest;
 import main.socketServer.error.ForbiddenRequest;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
+import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class HttpWorker implements Runnable {
@@ -21,29 +22,12 @@ public class HttpWorker implements Runnable {
 
     @Override
     public void run() {
-        PrintWriter out = null;
+        PrintStream out = null;
         BufferedReader in = null;
 
         try {
-            String req = "";
-            String clientRequest = "";
-
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            out = new PrintStream(clientSocket.getOutputStream());
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-//                while ((clientRequest = in.readLine()) != null) {
-////                    if (req.equals("")) {
-////                        req = clientRequest;
-////                    }
-//
-//                    System.out.println("request = " + clientRequest);
-//                    if(clientRequest.equals("")) {
-//                        //If the end of the http request , stop
-//                        break;
-//                    }
-//
-////                    if (req != null && !req.equals("")) {}
-//                }
 
 //                String line;
 //                while(true) {
@@ -59,7 +43,7 @@ public class HttpWorker implements Runnable {
             if (Objects.isNull(line)) {
                 return;
             }
-//                System.out.println("====while is start====");
+
             this.validate(line);
             String request = line.substring(4, line.length() - 9).trim();
 
@@ -72,7 +56,8 @@ public class HttpWorker implements Runnable {
 
             if (request.indexOf(".") > -1) {
                 // request dot이 있다면 file
-                
+                this.handleFileRequest(request, out);
+
 
             } else {
                 // 일반 html 파일 request
@@ -81,14 +66,12 @@ public class HttpWorker implements Runnable {
 //            String page = HtmlPageBuilder.buildErrorPage("200", "bad request", "bad request page not exist");
 //            out.println(page);
 
-            while (true) {
-                line = in.readLine();
-//                    System.out.println("line = " + line);
-                if (line.equals("")) {
-                    break;
-                }
-            }
-//                System.out.println("====while is ended====");
+//            while (true) {
+//                line = in.readLine();
+//                if (line.equals("")) {
+//                    break;
+//                }
+//            }
 
         } catch (BadRequest e) {
             String page = HtmlPageBuilder.buildErrorPage("400", "bad request", "bad request page not exist");
@@ -141,5 +124,84 @@ public class HttpWorker implements Runnable {
                 request.startsWith("POST") ||
                 request.startsWith("PUT"));
 
+    }
+
+    private void handleFileRequest(String request, PrintStream printer) {
+        String projectRootDir = this.getRootFolder();
+
+        Path filePath = Paths.get(projectRootDir, "/src/resources/images", request);
+
+        File file = new File(filePath.toString());
+
+        if (!file.exists() || !file.isFile()) {
+            printer.println("No such resource" + request);
+        } else {
+            String htmlHeader = buildHttpHeader(filePath.toString(), file.length());
+            printer.println(htmlHeader);
+
+            //open file to input stream
+            InputStream fs = null;
+            try {
+                fs = new FileInputStream(file);
+                byte[] buffer = new byte[1000];
+                while (fs.available()>0) {
+                    printer.write(buffer, 0, fs.read(buffer));
+                }
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (fs != null) {
+                    try {
+                        fs.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        }
+    }
+
+    private String getRootFolder() {
+        String root = "";
+
+        try {
+            //System.getProperty("user.dir");
+            //new File(" "); => socket_server/
+            File f = new File(".");
+            root = f.getCanonicalPath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return root;
+    }
+
+    private String buildHttpHeader(String path, long length) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("HTTP/1.1 200 ok");
+        sb.append(System.lineSeparator());
+        sb.append("Content-Length: ").append(length);
+        sb.append(System.lineSeparator());
+        sb.append("Content-Type: " ).append(getContentType(path));
+        sb.append(System.lineSeparator());
+
+        return sb.toString();
+    }
+
+    private static String getContentType(String path) {
+        if (path == null || path.equals("") || path.lastIndexOf(".") < 0) {
+            return "text/html";
+        }
+
+        String mimeType = URLConnection.guessContentTypeFromName(path);
+//                String s1 = Files.probeContentType(filePath);
+//                MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+//                String contentType = mimeTypesMap.getContentType(filePath.toString());
+
+        return mimeType;
     }
 }
