@@ -134,7 +134,7 @@ public class Server {
                         // Remove the last slash if exists
                         //존재하는 경우 마지막 슬래시를 제거하십시오.
                         if (req.endsWith("/")) {
-                            //마지막에 /로 끝난다면
+                            // 마지막에 /로 끝난다면
                             req = req.substring(0, req.length() - 1);
                         }
                         // Handle requests
