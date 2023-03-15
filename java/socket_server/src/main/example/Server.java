@@ -1,4 +1,6 @@
-package main;
+package main.example;
+
+import main.example.LogUtil;
 
 import java.io.*;
 import java.net.ServerSocket;
