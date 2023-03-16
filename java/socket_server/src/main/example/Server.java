@@ -259,7 +259,7 @@ public class Server {
             // Get the real file path
             String path = Paths.get(rootDir, req).toString();
             // Try to open the directory
-            File file = new File (path) ;
+            File file = new File (path);
             if (!file.exists()) {
                 // If the directory does not exist
                 printer.println("No such resource:" + req);

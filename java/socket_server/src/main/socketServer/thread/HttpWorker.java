@@ -11,7 +11,6 @@ import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
-import java.util.prefs.BackingStoreException;
 
 public class HttpWorker implements Runnable {
     private final Socket clientSocket;
@@ -53,16 +52,19 @@ public class HttpWorker implements Runnable {
                 request = request.substring(0, request.length() - 1);
             }
 
-
-            if (request.indexOf(".") > -1) {
-                // request dot이 있다면 file
-                this.handleFileRequest(request, out);
-            } else {
-                // 일반 html 파일 request
+            if (request.indexOf(".html") > -1) {
+                this.handleHtmlRequest(request, out);
+                return;
             }
 
-//            String page = HtmlPageBuilder.buildErrorPage("200", "bad request", "bad request page not exist");
-//            out.println(page);
+            if (request.indexOf(".") > -1) {
+                this.handleFileRequest(request, out);
+                return;
+            }
+
+
+            String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
+            out.println(page);
 
 //            while (true) {
 //                line = in.readLine();
@@ -77,7 +79,11 @@ public class HttpWorker implements Runnable {
         } catch (ForbiddenRequest e) {
             String page = HtmlPageBuilder.buildErrorPage("403", "forbidden request", "wrong request");
             out.println(page);
-        } catch (IOException e) {
+        } catch (FileNotFoundException e) {
+            String page = HtmlPageBuilder.buildErrorPage("404", "not found", "wrong request");
+            out.println(page);
+        }
+        catch (IOException e) {
             e.printStackTrace();
         } finally {
 
@@ -124,43 +130,88 @@ public class HttpWorker implements Runnable {
 
     }
 
-    private void handleFileRequest(String request, PrintStream printer) {
+    private void handleHtmlRequest(String request, PrintStream printer) throws FileNotFoundException {
+        String projectRootDir = this.getRootFolder();
+
+        Path filePath = Paths.get(projectRootDir, "/src/resources/templates", request);
+
+        File file = this.hasFile(filePath.toString());
+
+        String htmlHeader = buildHttpHeader(filePath.toString(), file.length());
+        printer.println(htmlHeader);
+
+        InputStream fs = null;
+        try {
+            fs = new FileInputStream(file);
+            byte[] buffer = new byte[1000];
+            while (fs.available()>0) {
+                printer.write(buffer, 0, fs.read(buffer));
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fs != null) {
+                try {
+                    fs.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+
+    }
+
+    private void handleFileRequest(String request, PrintStream printer) throws FileNotFoundException {
         String projectRootDir = this.getRootFolder();
 
         Path filePath = Paths.get(projectRootDir, "/src/resources/images", request);
 
-        File file = new File(filePath.toString());
+        File file = this.hasFile(filePath.toString());
 
-        if (!file.exists() || !file.isFile()) {
-            throw new BadRequest("no such " + file.getName());
-        } else {
-            String htmlHeader = buildHttpHeader(filePath.toString(), file.length());
-            printer.println(htmlHeader);
+        String htmlHeader = buildHttpHeader(filePath.toString(), file.length());
+        printer.println(htmlHeader);
 
-            //open file to input stream
-            InputStream fs = null;
-            try {
-                fs = new FileInputStream(file);
-                byte[] buffer = new byte[1000];
-                while (fs.available()>0) {
-                    printer.write(buffer, 0, fs.read(buffer));
-                }
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (fs != null) {
-                    try {
-                        fs.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+        //open file to input stream
+        InputStream fs = null;
+        try {
+            fs = new FileInputStream(file);
+            byte[] buffer = new byte[1000];
+            while (fs.available()>0) {
+                printer.write(buffer, 0, fs.read(buffer));
             }
 
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fs != null) {
+                try {
+                    fs.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
+
+    }
+
+    private File hasFile(String filePath) throws FileNotFoundException {
+
+        if (filePath == null) {
+            throw new FileNotFoundException("no such file");
+        }
+
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile()) {
+            throw new FileNotFoundException("no such " + file.getName());
+        }
+
+        return file;
     }
 
     private String getRootFolder() {
