@@ -28,20 +28,24 @@ public class HttpWorker implements Runnable {
             out = new PrintStream(clientSocket.getOutputStream());
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-//                String line;
-//                while(true) {
-//                    line = in.readLine();
-//                    System.out.println("line = " + line);
-//                    if (line.equals("")) {
-//                        break;
-//                    }
-//                }
-
             String line = in.readLine();
-
+            System.out.println("line first = " + line);
             if (Objects.isNull(line)) {
                 return;
             }
+
+            String test = null;
+            int cnt = 0;
+            while (true) {
+                test = in.readLine();
+                System.out.println("line = " + test);
+                if (test.equals("")) {
+                    break;
+                }
+                cnt++;
+                if (cnt > 10000) break;
+            }
+            //https://stackoverflow.com/questions/30901173/handling-post-request-via-socket-in-java
 
             this.validate(line);
             String request = line.substring(4, line.length() - 9).trim();
@@ -50,6 +54,10 @@ public class HttpWorker implements Runnable {
 
             if (request.endsWith("/")) {
                 request = request.substring(0, request.length() - 1);
+            }
+
+            if (Objects.equals(request, "") || Objects.equals(request, "/index")) {
+                request = "/index.html";
             }
 
             if (request.indexOf(".html") > -1) {
@@ -66,12 +74,6 @@ public class HttpWorker implements Runnable {
             String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
             out.println(page);
 
-//            while (true) {
-//                line = in.readLine();
-//                if (line.equals("")) {
-//                    break;
-//                }
-//            }
 
         } catch (BadRequest e) {
             String page = HtmlPageBuilder.buildErrorPage("400", "bad request", e.getMessage());
