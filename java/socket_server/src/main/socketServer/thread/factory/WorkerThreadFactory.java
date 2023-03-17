@@ -8,6 +8,7 @@ public class WorkerThreadFactory implements ThreadFactory {
         Thread thread = new Thread(r);
         thread.setDaemon(true);
         System.out.println("new Thread name = " + thread.getName());
+        thread.setName("thread pool");
 
         return thread;
     }

@@ -3,111 +3,109 @@ package main.socketServer.thread;
 import main.socketServer.Utils.HtmlPageBuilder;
 import main.socketServer.error.BadRequest;
 import main.socketServer.error.ForbiddenRequest;
+import main.socketServer.server.SocketServer;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketOption;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.concurrent.LinkedBlockingQueue;
 
-public class HttpWorker implements Runnable {
-    private final Socket clientSocket;
+public class TaskWorkerThread extends Thread {
 
-    public HttpWorker(Socket clientSocket) {
-        this.clientSocket = clientSocket;
+    private final LinkedBlockingQueue requestQueue;
+    private final Object lock;
+
+    public TaskWorkerThread(LinkedBlockingQueue requestQueue) {
+        this.setName("task-worker-thread");
+        this.setDaemon(true);
+        this.requestQueue = requestQueue;
+        this.lock = new Object();
     }
 
     @Override
     public void run() {
         PrintStream out = null;
         BufferedReader in = null;
+        Socket client = null;
 
-        try {
-            out = new PrintStream(clientSocket.getOutputStream());
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-            String line = in.readLine();
-            System.out.println("line first = " + line);
-
-            if (Objects.isNull(line)) {
-                return;
-            }
-//            do {
-//                test = in.readLine();
-//                System.out.println("test = " + test);
-//            }while(test != null && !test.equals(""));
-
-
-//            while (true) {
-//                test = in.readLine();
-//
-//                if (!test.equals("")) {
-//                    System.out.println("line = " + test);
-//                }
-//                count++;
-//
-//                if (count > 1000) break;
-//            }
-
-            //https://stackoverflow.com/questions/30901173/handling-post-request-via-socket-in-java
-            //https://okky.kr/questions/420777
-
-            this.validate(line);
-            String request = line.substring(4, line.length() - 9).trim();
-
-            request = URLDecoder.decode(request, "UTF-8");
-
-            if (request.endsWith("/")) {
-                request = request.substring(0, request.length() - 1);
-            }
-
-            if (Objects.equals(request, "") || Objects.equals(request, "/index")) {
-                request = "/index.html";
-            }
-
-            if (request.indexOf(".html") > -1) {
-                this.handleHtmlRequest(request, out);
-                return;
-            }
-
-            if (request.indexOf(".") > -1) {
-                this.handleFileRequest(request, out);
-                return;
-            }
-
-
-            String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
-            out.println(page);
-
-
-        } catch (BadRequest e) {
-            String page = HtmlPageBuilder.buildErrorPage("400", "bad request", e.getMessage());
-            out.println(page);
-        } catch (ForbiddenRequest e) {
-            String page = HtmlPageBuilder.buildErrorPage("403", "forbidden request", "wrong request");
-            out.println(page);
-        } catch (FileNotFoundException e) {
-            String page = HtmlPageBuilder.buildErrorPage("404", "not found", "wrong request");
-            out.println(page);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-
+        while(true) {
             try {
-                if (out != null) {
-                    out.close();
+                synchronized (lock) {
+                    client = (Socket) requestQueue.take();
                 }
-                if (in != null) {
-                    in.close();
-                    clientSocket.close();
+
+
+                out = new PrintStream(client.getOutputStream());
+                in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+
+                String line = in.readLine();
+                System.out.println("line first = " + line);
+
+                if (Objects.isNull(line)) {
+                    continue;
                 }
+
+                this.validate(line);
+
+                String request = line.substring(4, line.length() - 9).trim();
+
+                request = URLDecoder.decode(request, "UTF-8");
+
+                if (request.endsWith("/")) {
+                    request = request.substring(0, request.length() - 1);
+                }
+
+                if (Objects.equals(request, "") || Objects.equals(request, "/index")) {
+                    request = "/index.html";
+                }
+
+                if (request.indexOf(".html") > -1) {
+                    this.handleHtmlRequest(request, out);
+                    continue;
+                }
+
+                if (request.indexOf(".") > -1) {
+                    this.handleFileRequest(request, out);
+                    continue;
+                }
+
+
+                String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
+                out.println(page);
+
+            } catch (BadRequest e) {
+                String page = HtmlPageBuilder.buildErrorPage("400", "bad request", e.getMessage());
+                out.println(page);
+            } catch (ForbiddenRequest e) {
+                String page = HtmlPageBuilder.buildErrorPage("403", "forbidden request", "wrong request");
+                out.println(page);
+            } catch (FileNotFoundException e) {
+                String page = HtmlPageBuilder.buildErrorPage("404", "not found", "wrong request");
+                out.println(page);
             } catch (IOException e) {
                 e.printStackTrace();
-            }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
 
+                try {
+                    if (out != null) {
+                        out.close();
+                    }
+                    if (in != null) {
+                        in.close();
+                        client.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
         }
     }
 
