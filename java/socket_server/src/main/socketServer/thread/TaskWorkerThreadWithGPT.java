@@ -3,23 +3,22 @@ package main.socketServer.thread;
 import main.socketServer.Utils.HtmlPageBuilder;
 import main.socketServer.error.BadRequest;
 import main.socketServer.error.ForbiddenRequest;
-import main.socketServer.server.SocketServer;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketOption;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class TaskWorkerThread extends Thread {
+public class TaskWorkerThreadWithGPT extends Thread {
 
-    private final LinkedBlockingQueue requestQueue;
+    private final Queue<Socket> requestQueue;
 
-    public TaskWorkerThread(LinkedBlockingQueue requestQueue) {
+    public TaskWorkerThreadWithGPT(Queue<Socket> requestQueue) {
         this.setName("task-worker-thread");
         this.setDaemon(true);
         this.requestQueue = requestQueue;
@@ -33,7 +32,16 @@ public class TaskWorkerThread extends Thread {
 
         while(true) {
             try {
-                client = (Socket) requestQueue.take();
+                synchronized (requestQueue) {
+                    while(requestQueue.isEmpty()) {
+                        try {
+                            requestQueue.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    client = requestQueue.poll();
+                }
 
                 out = new PrintStream(client.getOutputStream());
                 in = new BufferedReader(new InputStreamReader(client.getInputStream()));
@@ -83,8 +91,6 @@ public class TaskWorkerThread extends Thread {
                 String page = HtmlPageBuilder.buildErrorPage("404", "not found", "wrong request");
                 out.println(page);
             } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
 

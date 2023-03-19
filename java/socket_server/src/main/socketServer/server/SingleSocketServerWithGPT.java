@@ -1,16 +1,17 @@
 package main.socketServer.server;
 
-import main.socketServer.thread.TaskWorkerThread;
+import main.socketServer.thread.TaskWorkerThreadWithGPT;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.LinkedList;
+import java.util.Queue;
 
-public class SingleSocketServer {
+public class SingleSocketServerWithGPT {
 
-    private static final LinkedBlockingQueue requestQueue = new LinkedBlockingQueue(10000);
+    private static Queue<Socket> requestQueue = new LinkedList<>();
 
     public static void singleThreadStart(int port) {
         ServerSocket server = null;
@@ -21,7 +22,7 @@ public class SingleSocketServer {
             server = new ServerSocket(port);
             server.setReuseAddress(true);
 
-            taskWorkerThread = new TaskWorkerThread(requestQueue);
+            taskWorkerThread = new TaskWorkerThreadWithGPT(requestQueue);
             taskWorkerThread.start();
 
             System.out.println("server is listened..." + "http://localhost:" + port);
@@ -29,14 +30,15 @@ public class SingleSocketServer {
             while (true) {
                 //연결된 소켓 accpet queue에서 가져옴
                 Socket client = server.accept();
-                requestQueue.put(client);
+                synchronized (requestQueue) {
+                    requestQueue.add(client);
+                    requestQueue.notify();
+                }
 
                 System.out.println("New client connected " + client.getInetAddress().getHostAddress());
             }
 
         } catch (SocketException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         }catch (IOException e) {
             e.printStackTrace();
