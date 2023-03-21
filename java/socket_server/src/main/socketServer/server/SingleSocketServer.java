@@ -2,15 +2,18 @@ package main.socketServer.server;
 
 import main.socketServer.thread.TaskWorkerThread;
 
+import javax.swing.plaf.IconUIResource;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SingleSocketServer {
 
     private static final LinkedBlockingQueue requestQueue = new LinkedBlockingQueue(10000);
+    private static AtomicInteger count = new AtomicInteger(0);
 
     public static void singleThreadStart(int port) {
         ServerSocket server = null;
@@ -29,9 +32,12 @@ public class SingleSocketServer {
             while (true) {
                 //연결된 소켓 accpet queue에서 가져옴
                 Socket client = server.accept();
+                count.incrementAndGet();
                 requestQueue.put(client);
+                System.out.println("accept = " + count);
 
-                System.out.println("New client connected " + client.getInetAddress().getHostAddress());
+
+//                System.out.println("New client connected " + client.getInetAddress().getHostAddress());
             }
 
         } catch (SocketException e) {

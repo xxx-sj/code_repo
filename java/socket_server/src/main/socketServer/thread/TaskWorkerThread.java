@@ -14,16 +14,22 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskWorkerThread extends Thread {
 
     private final LinkedBlockingQueue requestQueue;
 
+    private AtomicInteger count = new AtomicInteger(0);
+    private final Object lock;
+
     public TaskWorkerThread(LinkedBlockingQueue requestQueue) {
         this.setName("task-worker-thread");
         this.setDaemon(true);
         this.requestQueue = requestQueue;
+        this.lock = new Object();
     }
+
 
     @Override
     public void run() {
@@ -33,13 +39,15 @@ public class TaskWorkerThread extends Thread {
 
         while(true) {
             try {
+
                 client = (Socket) requestQueue.take();
+                count.incrementAndGet();
 
                 out = new PrintStream(client.getOutputStream());
                 in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
                 String line = in.readLine();
-                System.out.println("line first = " + line);
+//                System.out.println("line first = " + line);
 
                 if (Objects.isNull(line)) {
                     continue;
@@ -59,6 +67,8 @@ public class TaskWorkerThread extends Thread {
                     request = "/index.html";
                 }
 
+                System.out.println("take = " + count);
+
                 if (request.indexOf(".html") > -1) {
                     this.handleHtmlRequest(request, out);
                     continue;
@@ -70,9 +80,8 @@ public class TaskWorkerThread extends Thread {
                 }
 
 
-                String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
-                out.println(page);
-
+//                String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
+//                out.println(page);
             } catch (BadRequest e) {
                 String page = HtmlPageBuilder.buildErrorPage("400", "bad request", e.getMessage());
                 out.println(page);
@@ -99,7 +108,6 @@ public class TaskWorkerThread extends Thread {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
         }
     }
@@ -249,10 +257,10 @@ public class TaskWorkerThread extends Thread {
         }
 
         String mimeType = URLConnection.guessContentTypeFromName(path);
-//                String s1 = Files.probeContentType(filePath);
 //                MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
 //                String contentType = mimeTypesMap.getContentType(filePath.toString());
 
+//                String s1 = Files.probeContentType(filePath);
         return mimeType;
     }
 }
