@@ -82,6 +82,8 @@ public class TaskWorkerThread extends Thread {
 
 //                String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
 //                out.println(page);
+
+
             } catch (BadRequest e) {
                 String page = HtmlPageBuilder.buildErrorPage("400", "bad request", e.getMessage());
                 out.println(page);
