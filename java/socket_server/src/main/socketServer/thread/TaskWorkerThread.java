@@ -107,6 +107,8 @@ public class TaskWorkerThread extends Thread {
                     }
                     if (in != null) {
                         in.close();
+                    }
+                    if(!client.isClosed()) {
                         client.close();
                     }
                 } catch (IOException e) {
