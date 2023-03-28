@@ -69,7 +69,7 @@ public class TaskWorkerThread extends Thread {
                     request = "/index.html";
                 }
 
-                System.out.println("take = " + count);
+//                System.out.println("take = " + count);
 
                 if (request.indexOf(".html") > -1) {
                     this.handleHtmlRequest(request, out);
@@ -85,7 +85,6 @@ public class TaskWorkerThread extends Thread {
 //                String page = HtmlPageBuilder.buildErrorPage("404", "not found", "bad request page not exist");
 //                out.println(page);
 
-
             } catch (BadRequest e) {
                 String page = HtmlPageBuilder.buildErrorPage("400", "bad request", e.getMessage());
                 out.println(page);
@@ -100,7 +99,6 @@ public class TaskWorkerThread extends Thread {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
-
                 try {
                     if (out != null) {
                         out.close();

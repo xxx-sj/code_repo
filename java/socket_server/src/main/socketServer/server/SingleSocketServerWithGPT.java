@@ -8,10 +8,12 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SingleSocketServerWithGPT {
 
     private static Queue<Socket> requestQueue = new LinkedList<>();
+    private static AtomicInteger count = new AtomicInteger(0);
 
     public static void singleThreadStart(int port) {
         ServerSocket server = null;
@@ -33,9 +35,11 @@ public class SingleSocketServerWithGPT {
                 synchronized (requestQueue) {
                     requestQueue.add(client);
                     requestQueue.notify();
+                    count.incrementAndGet();
+                    System.out.println("put count = " + count);
                 }
 
-                System.out.println("New client connected " + client.getInetAddress().getHostAddress());
+//                System.out.println("New client connected " + client.getInetAddress().getHostAddress());
             }
 
         } catch (SocketException e) {

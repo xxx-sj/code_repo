@@ -13,10 +13,12 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskWorkerThreadWithGPT extends Thread {
 
     private final Queue<Socket> requestQueue;
+    private AtomicInteger count = new AtomicInteger(0);
 
     public TaskWorkerThreadWithGPT(Queue<Socket> requestQueue) {
         this.setName("task-worker-thread");
@@ -47,7 +49,7 @@ public class TaskWorkerThreadWithGPT extends Thread {
                 in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
                 String line = in.readLine();
-                System.out.println("line first = " + line);
+//                System.out.println("line first = " + line);
 
                 if (Objects.isNull(line)) {
                     continue;
@@ -66,6 +68,9 @@ public class TaskWorkerThreadWithGPT extends Thread {
                 if (Objects.equals(request, "") || Objects.equals(request, "/index")) {
                     request = "/index.html";
                 }
+
+                count.incrementAndGet();
+                System.out.println("finish count = " + count);
 
                 if (request.indexOf(".html") > -1) {
                     this.handleHtmlRequest(request, out);
@@ -213,7 +218,12 @@ public class TaskWorkerThreadWithGPT extends Thread {
         if (filePath == null) {
             throw new FileNotFoundException("no such file");
         }
+//        ClassLoader classLoader = getClass().getClassLoader();
+//        File file = new File(classLoader.getResource("file/test.xml").getFile());
+//        ClassPathResource classPathResource = new ClassPathResource("config/" + path);
+//        ClassLoader나 ClassPathResource클래스를 통해 원하는 리소스를 찾을 수 있다.
 
+        System.out.println(filePath);
         File file = new File(filePath);
         if (!file.exists() || !file.isFile()) {
             throw new FileNotFoundException("no such " + file.getName());

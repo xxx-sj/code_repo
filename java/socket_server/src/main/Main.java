@@ -10,7 +10,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        SingleSocketServer.singleThreadStart(8088);
-//        SingleSocketServerWithGPT.singleThreadStart(8088);
+//        SingleSocketServer.singleThreadStart(8088);
+        SingleSocketServerWithGPT.singleThreadStart(8088);
     }
 }
