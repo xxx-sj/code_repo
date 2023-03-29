@@ -151,10 +151,10 @@ public class TaskWorkerThreadWithGPT extends Thread {
 //        Path filePath = Paths.get(projectRootDir, "/src/resources/templates", request);
 
         String filepath = "/resources/templates" + request;
-        System.out.println("filepath = " + filepath);
+//        System.out.println("filepath = " + filepath);
         InputStream in = getClass().getResourceAsStream(filepath);
-        System.out.println("file is null" + (in == null));
-        String htmlHeader = buildHttpHeader(filepath, 10000);
+//        System.out.println("file is null" + (in == null));
+        String htmlHeader = buildHttpHeader(filepath, 235);
         printer.println(htmlHeader);
 
         try {
@@ -195,9 +195,9 @@ public class TaskWorkerThreadWithGPT extends Thread {
         String filepath = "/resources/templates" + request;
 
         InputStream in = getClass().getResourceAsStream(filepath);
-        System.out.println("filepath = " + filepath);
+//        System.out.println("filepath = " + filepath);
 
-        String htmlHeader = buildHttpHeader(filepath, 10000);
+        String htmlHeader = buildHttpHeader(filepath, 235);
         printer.println(htmlHeader);
 
         //open file to input stream
