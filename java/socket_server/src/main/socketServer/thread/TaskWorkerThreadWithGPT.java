@@ -144,21 +144,26 @@ public class TaskWorkerThreadWithGPT extends Thread {
     }
 
     private void handleHtmlRequest(String request, PrintStream printer) throws FileNotFoundException {
-        String projectRootDir = this.getRootFolder();
+//        String projectRootDir = this.getRootFolder();
+        if(request.equals("favicon.ico")) {
+            return;
+        }
+//        Path filePath = Paths.get(projectRootDir, "/src/resources/templates", request);
 
-        Path filePath = Paths.get(projectRootDir, "/src/resources/templates", request);
-
-        File file = this.hasFile(filePath.toString());
-
-        String htmlHeader = buildHttpHeader(filePath.toString(), file.length());
+        String filepath = "/resources/templates" + request;
+        System.out.println("filepath = " + filepath);
+        InputStream in = getClass().getResourceAsStream(filepath);
+        System.out.println("file is null" + (in == null));
+        String htmlHeader = buildHttpHeader(filepath, 10000);
         printer.println(htmlHeader);
 
-        InputStream fs = null;
         try {
-            fs = new FileInputStream(file);
+            if (in == null) {
+                throw new FileNotFoundException();
+            }
             byte[] buffer = new byte[1000];
-            while (fs.available()>0) {
-                printer.write(buffer, 0, fs.read(buffer));
+            while (in.available()>0) {
+                printer.write(buffer, 0, in.read(buffer));
             }
 
         } catch (FileNotFoundException e) {
@@ -166,45 +171,53 @@ public class TaskWorkerThreadWithGPT extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (fs != null) {
+            if (in != null) {
                 try {
-                    fs.close();
+                    in.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
-
-
     }
 
     private void handleFileRequest(String request, PrintStream printer) throws FileNotFoundException {
-        String projectRootDir = this.getRootFolder();
+        if(request.equals("favicon.ico")) {
+            return;
+        }
 
-        Path filePath = Paths.get(projectRootDir, "/src/resources/images", request);
+//        String projectRootDir = this.getRootFolder();
 
-        File file = this.hasFile(filePath.toString());
+//        Path filePath = Paths.get(projectRootDir, "/src/resources/images", request);
 
-        String htmlHeader = buildHttpHeader(filePath.toString(), file.length());
+//        File file = this.hasFile(filePath.toString());
+
+        String filepath = "/resources/templates" + request;
+
+        InputStream in = getClass().getResourceAsStream(filepath);
+        System.out.println("filepath = " + filepath);
+
+        String htmlHeader = buildHttpHeader(filepath, 10000);
         printer.println(htmlHeader);
 
         //open file to input stream
-        InputStream fs = null;
+//        InputStream fs = null;
         try {
-            fs = new FileInputStream(file);
-            byte[] buffer = new byte[1000];
-            while (fs.available()>0) {
-                printer.write(buffer, 0, fs.read(buffer));
+            if (in == null) {
+                throw new FileNotFoundException();
             }
-
+            byte[] buffer = new byte[1000];
+            while (in.available()>0) {
+                printer.write(buffer, 0, in.read(buffer));
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (fs != null) {
+            if (in != null) {
                 try {
-                    fs.close();
+                    in.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
