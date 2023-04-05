@@ -236,7 +236,7 @@ public class TaskWorkerThreadWithGPT extends Thread {
 //        ClassPathResource classPathResource = new ClassPathResource("config/" + path);
 //        ClassLoader나 ClassPathResource클래스를 통해 원하는 리소스를 찾을 수 있다.
 
-        System.out.println(filePath);
+//        System.out.println(filePath);
         File file = new File(filePath);
         if (!file.exists() || !file.isFile()) {
             throw new FileNotFoundException("no such " + file.getName());

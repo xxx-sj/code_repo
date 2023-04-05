@@ -11,9 +11,12 @@ import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HttpWorker implements Runnable {
     private final Socket clientSocket;
+
+    private AtomicInteger count = new AtomicInteger(0);
 
     public HttpWorker(Socket clientSocket) {
         this.clientSocket = clientSocket;
@@ -34,25 +37,7 @@ public class HttpWorker implements Runnable {
             if (Objects.isNull(line)) {
                 return;
             }
-//            do {
-//                test = in.readLine();
-//                System.out.println("test = " + test);
-//            }while(test != null && !test.equals(""));
 
-
-//            while (true) {
-//                test = in.readLine();
-//
-//                if (!test.equals("")) {
-//                    System.out.println("line = " + test);
-//                }
-//                count++;
-//
-//                if (count > 1000) break;
-//            }
-
-            //https://stackoverflow.com/questions/30901173/handling-post-request-via-socket-in-java
-            //https://okky.kr/questions/420777
 
             this.validate(line);
             String request = line.substring(4, line.length() - 9).trim();
@@ -66,6 +51,9 @@ public class HttpWorker implements Runnable {
             if (Objects.equals(request, "") || Objects.equals(request, "/index")) {
                 request = "/index.html";
             }
+
+            count.incrementAndGet();
+            System.out.println("finish count = " + count);
 
             if (request.indexOf(".html") > -1) {
                 this.handleHtmlRequest(request, out);
@@ -145,10 +133,10 @@ public class HttpWorker implements Runnable {
 //        Path filePath = Paths.get(projectRootDir, "/src/resources/templates", request);
 
         String filepath = "/resources/templates" + request;
-        System.out.println("filepath = " + filepath);
+//        System.out.println("filepath = " + filepath);
         InputStream in = getClass().getResourceAsStream(filepath);
-        System.out.println("file is null" + (in == null));
-        String htmlHeader = buildHttpHeader(filepath, 0);
+//        System.out.println("file is null" + (in == null));
+        String htmlHeader = buildHttpHeader(filepath, 235);
         printer.println(htmlHeader);
 
         try {
