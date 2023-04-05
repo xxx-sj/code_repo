@@ -18,7 +18,7 @@ public class SingleSocketServerWithGPT {
 
     private static Queue<Socket> requestQueue = new LinkedList<>();
     private static AtomicInteger count = new AtomicInteger(0);
-    private static ExecutorService executor = Executors.newFixedThreadPool(2, new WorkerThreadFactory());
+    private static ExecutorService executor = Executors.newFixedThreadPool(3, new WorkerThreadFactory());
 
     public static void singleThreadStart(int port) {
         ServerSocket server = null;
