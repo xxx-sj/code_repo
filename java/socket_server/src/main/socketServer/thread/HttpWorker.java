@@ -8,8 +8,6 @@ import java.io.*;
 import java.net.Socket;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Objects;
 
 public class HttpWorker implements Runnable {
